@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joke Generator 🎭</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-random {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-random:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-multiple {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-multiple:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-general {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-general:hover {
+            background: #e68900;
+            transform: translateY(-2px);
+        }
+
+        .btn-knockknock {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-knockknock:hover {
+            background: #0b7dda;
+            transform: translateY(-2px);
+        }
+
+        .joke-container {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .joke-setup {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .joke-punchline {
+            font-size: 1.4em;
+            color: #667eea;
+            font-weight: bold;
+            text-align: right;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid #c62828;
+        }
+
+        .joke-count {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+
+        .counter {
+            text-align: center;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .multiple-jokes {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .single-joke {
+            margin-bottom: 15px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-random {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Joke Generator</h1>
+        <p class="subtitle">Get a laugh in seconds!</p>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div class="button-group">
+            <button class="btn-random" onclick="getRandomJoke()">Get Random Joke</button>
+            <button class="btn-multiple" onclick="getMultipleJokes()">Get 5 Jokes</button>
+            <button class="btn-general" onclick="getJokeByType('general')">General Jokes</button>
+            <button class="btn-knockknock" onclick="getJokeByType('knock-knock')">Knock-Knock</button>
+        </div>
+
+        <div id="jokeContainer" class="joke-container">
+            <p style="text-align: center; color: #999;">Click a button to get started! 👆</p>
+        </div>
+
+        <div id="jokeCount" class="joke-count" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://official-joke-api.appspot.com';
+        const jokeContainer = document.getElementById('jokeContainer');
+        const errorContainer = document.getElementById('error');
+        const jokeCountElement = document.getElementById('jokeCount');
+
+        function showError(message) {
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+            setTimeout(() => {
+                errorContainer.style.display = 'none';
+            }, 5000);
+        }
+
+        function displayJoke(joke) {
+            jokeContainer.innerHTML = `
+                <div class="joke-setup">${joke.setup}</div>
+                <div class="joke-punchline">${joke.punchline}</div>
+            `;
+            jokeCountElement.style.display = 'none';
+        }
+
+        function displayMultipleJokes(jokes) {
+            let html = '<div class="multiple-jokes">';
+            jokes.forEach((joke, index) => {
+                html += `
+                    <div class="single-joke">
+                        <div class="counter">Joke ${index + 1}</div>
+                        <div class="joke-setup">${joke.setup}</div>
+                        <div class="joke-punchline">${joke.punchline}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            jokeContainer.innerHTML = html;
+            jokeCountElement.innerHTML = `Showing ${jokes.length} jokes`;
+            jokeCountElement.style.display = 'block';
+        }
+
+        async function getRandomJoke() {
+            try {
+                jokeContainer.innerHTML = '<p class="loading">⏳ Loading joke...</p>';
+                errorContainer.style.display = 'none';
+                
+                const response = await fetch(`${API_URL}/random_joke`);
+                if (!response.ok) throw new Error('Failed to fetch joke');
+                
+                const joke = await response.json();
+                displayJoke(joke);
+            } catch (error) {
+                showError('❌ Error fetching joke. Please try again!');
+                jokeContainer.innerHTML = '<p style="text-align: center; color: #999;">Click a button to get started! 👆</p>';
+            }
+        }
+
+        async function getMultipleJokes() {
+            try {
+                jokeContainer.innerHTML = '<p class="loading">⏳ Loading jokes...</p>';
+                errorContainer.style.display = 'none';
+                
+                const response = await fetch(`${API_URL}/jokes/random/5`);
+                if (!response.ok) throw new Error('Failed to fetch jokes');
+                
+                const jokes = await response.json();
+                displayMultipleJokes(jokes);
+            } catch (error) {
+                showError('❌ Error fetching jokes. Please try again!');
+                jokeContainer.innerHTML = '<p style="text-align: center; color: #999;">Click a button to get started! 👆</p>';
+            }
+        }
+
+        async function getJokeByType(type) {
+            try {
+                jokeContainer.innerHTML = '<p class="loading">⏳ Loading joke...</p>';
+                errorContainer.style.display = 'none';
+                
+                const response = await fetch(`${API_URL}/jokes/${type}/random`);
+                if (!response.ok) throw new Error(`Failed to fetch ${type} joke`);
+                
+                const joke = await response.json();
+                displayJoke(joke);
+            } catch (error) {
+                showError(`❌ Error fetching ${type} joke. Please try again!`);
+                jokeContainer.innerHTML = '<p style="text-align: center; color: #999;">Click a button to get started! 👆</p>';
+            }
+        }
+    </script>
+</body>
+</html>
